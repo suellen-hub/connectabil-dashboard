@@ -538,13 +538,20 @@ function applyFilters(rows, hasType=true){
 }
 
 function buildFilterMenus(){
-  // IS
+  // IS — inclui automaticamente valores novos que apareceram (ex: ao trocar de mês)
   const isSet=[...new Set(S.allTrans.concat(S.allSaas).map(r=>r.inside_sales||'(em branco)'))].sort()
   if(!S.fIS.length) S.fIS=[...isSet]
+  else { isSet.forEach(v=>{ if(!S.fISseen||!S.fISseen.includes(v)) if(!S.fIS.includes(v)) S.fIS.push(v) }) }
+  // remove da seleção valores que não existem mais nos dados atuais
+  S.fIS=S.fIS.filter(v=>isSet.includes(v)); if(!S.fIS.length)S.fIS=[...isSet]
+  S.fISseen=[...isSet]
   $('is-menu').innerHTML=isSet.map(v=>`<div class="dd-opt" onclick="toggleF('IS','${v.replace(/'/g,"")}',event)"><div class="dd-chk ${S.fIS.includes(v)?'on':''}">${S.fIS.includes(v)?'✓':''}</div>${v}</div>`).join('')
-  // UF
+  // UF — mesma lógica
   const ufSet=[...new Set(S.allTrans.concat(S.allSaas).map(r=>r.estado||'(sem UF)'))].sort()
   if(!S.fUF.length) S.fUF=[...ufSet]
+  else { ufSet.forEach(v=>{ if(!S.fUFseen||!S.fUFseen.includes(v)) if(!S.fUF.includes(v)) S.fUF.push(v) }) }
+  S.fUF=S.fUF.filter(v=>ufSet.includes(v)); if(!S.fUF.length)S.fUF=[...ufSet]
+  S.fUFseen=[...ufSet]
   $('uf-menu').innerHTML=ufSet.map(v=>`<div class="dd-opt" onclick="toggleF('UF','${v.replace(/'/g,"")}',event)"><div class="dd-chk ${S.fUF.includes(v)?'on':''}">${S.fUF.includes(v)?'✓':''}</div>${v}</div>`).join('')
   // Tipo (depende da aba)
   let tipoSet
