@@ -135,8 +135,12 @@ tr:nth-child(even) td{background:#FAFAFA}
   <div class="sb-nav" data-tab="saas" onclick="nav(this)"><span class="sb-ico">◎</span>SaaS</div>
   <div class="sb-sec">Acompanhamento</div>
   <div class="sb-nav" data-tab="metas" onclick="nav(this)"><span class="sb-ico">🎯</span>Metas</div>
+  <div class="sb-nav" data-tab="projecao" onclick="nav(this)"><span class="sb-ico">📊</span>Projeção × Realizado</div>
   <div class="sb-nav" data-tab="faturamento" onclick="nav(this)"><span class="sb-ico">💰</span>Faturamento</div>
   <div class="sb-nav" data-tab="roleta" onclick="nav(this)"><span class="sb-ico">⊕</span>Roleta</div>
+  <div class="sb-sec">Carteiras</div>
+  <div class="sb-nav" data-tab="cart-thalita" onclick="nav(this)"><span class="sb-ico">📁</span>Carteira Thalita</div>
+  <div class="sb-nav" data-tab="cart-vanuza" onclick="nav(this)"><span class="sb-ico">📁</span>Carteira Vanuza</div>
   <div class="sb-sec">Análises</div>
   <div class="sb-nav" data-tab="evolucao" onclick="nav(this)"><span class="sb-ico">📈</span>Evolução Mensal</div>
   <div class="sb-nav" data-tab="areas" onclick="nav(this)"><span class="sb-ico">🗂️</span>Áreas e Níveis</div>
@@ -278,6 +282,44 @@ tr:nth-child(even) td{background:#FAFAFA}
     <div class="card cg" id="roleta-origem"></div>
   </div>
 
+  <!-- PROJEÇÃO x REALIZADO -->
+  <div id="p-projecao" class="page">
+    <div class="sec">Projeção × Realizado — Hoje</div>
+    <div class="sec-note">Digite no início do dia a projeção de honorários e de SaaS · o realizado soma sozinho conforme as vagas entram</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:8px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px"><span class="flbl">Projeção honorários (dia):</span><span style="font-size:13px;color:var(--sub)">R$</span><input type="number" class="meta-input" id="proj-hon" value="0" onchange="renderProjecao()"/></div>
+      <div style="display:flex;align-items:center;gap:8px"><span class="flbl">Projeção SaaS (dia):</span><span style="font-size:13px;color:var(--sub)">R$</span><input type="number" class="meta-input" id="proj-saas" value="0" onchange="renderProjecao()"/></div>
+      <div style="display:flex;align-items:center;gap:8px"><span class="flbl">Projeção nº de vagas:</span><input type="number" class="meta-input" id="proj-vagas" value="0" style="width:80px" onchange="renderProjecao()"/></div>
+    </div>
+    <div class="g4 mb24" id="proj-k"></div>
+    <div class="sec">Projetado × Realizado (Total do Dia)</div>
+    <div class="card cg mb24" id="proj-comp"></div>
+    <div class="sec">Vagas Abertas Hoje</div>
+    <div class="card cg"><div class="tbl-wrap" id="proj-tbl"></div></div>
+  </div>
+
+  <!-- CARTEIRA THALITA -->
+  <div id="p-cart-thalita" class="page">
+    <div class="sec">Carteira — Thalita</div>
+    <div class="filters" style="border:1px solid var(--border);border-radius:8px;margin-bottom:16px">
+      <input type="text" id="busca-thalita" placeholder="🔍 Buscar por empresa ou CNPJ..." style="flex:1;min-width:220px;padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px" oninput="renderCarteira('Thalita')"/>
+      <div class="dd"><button class="dd-btn" onclick="ddToggle('uf-thalita',event)"><span>📍</span> <span id="uf-thalita-sum">Todos UF</span> ▾</button><div class="dd-menu" id="uf-thalita-menu"></div></div>
+    </div>
+    <div class="g4 mb24" id="cart-thalita-k"></div>
+    <div class="card cg"><div class="tbl-wrap" id="cart-thalita-tbl"></div></div>
+  </div>
+
+  <!-- CARTEIRA VANUZA -->
+  <div id="p-cart-vanuza" class="page">
+    <div class="sec">Carteira — Vanuza</div>
+    <div class="filters" style="border:1px solid var(--border);border-radius:8px;margin-bottom:16px">
+      <input type="text" id="busca-vanuza" placeholder="🔍 Buscar por empresa ou CNPJ..." style="flex:1;min-width:220px;padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px" oninput="renderCarteira('Vanuza')"/>
+      <div class="dd"><button class="dd-btn" onclick="ddToggle('uf-vanuza',event)"><span>📍</span> <span id="uf-vanuza-sum">Todos UF</span> ▾</button><div class="dd-menu" id="uf-vanuza-menu"></div></div>
+    </div>
+    <div class="g4 mb24" id="cart-vanuza-k"></div>
+    <div class="card cg"><div class="tbl-wrap" id="cart-vanuza-tbl"></div></div>
+  </div>
+
   <!-- EVOLUÇÃO MENSAL -->
   <div id="p-evolucao" class="page">
     <div class="sec">Evolução Mensal 2026</div>
@@ -406,6 +448,7 @@ const S={di:'',df:'',mesRef:0,anoRef:0,periodoLabel:'Mês atual',tab:'geral',
   trans:[],saas:[],roleta:[],snaps:[],snap:null,meta:null,
   consGeral:null,consVanuza:null,consThalita:null,
   mktTrafego:[],mktSocial:[],mktEmail:[],mktCampanhas:[],mktLeads:[],mktLoaded:false,
+  carteiras:[],cartUF:{Thalita:[],Vanuza:[]},
   allTrans:[],allSaas:[],allRoleta:[]}
 
 const $=id=>document.getElementById(id)
@@ -455,6 +498,8 @@ async function fetchAll(){
     ])
     S.snaps=snaps||[];S.snap=S.snaps[S.snaps.length-1]||null
     S.allTrans=trans||[];S.allSaas=saas||[];S.allRoleta=roleta||[]
+    // Correção MRR/ARR: contrato mensal (ARR zerado com MRR) usa o MRR como valor anual de referência
+    S.allSaas.forEach(r=>{if((!r.arr||r.arr===0)&&r.mrr>0)r.arr=r.mrr})
     // Se o snapshot estiver vazio, monta a partir de transacional+saas (não depende mais da tabela)
     if(!S.snaps.length){
       const dd={}
@@ -591,6 +636,7 @@ function render(){
   renderAreas()
   renderOrigemConv()
   if(S.mktLoaded){renderTrafego();renderSocial();renderEmail();renderCampanhas();renderMktLeads()}
+  renderProjecao()
 }
 
 function renderGeral(tTrans,tArr,tMrr,tGeral,acum,metaG,pAtg,tend,dPass,dRest,du,snap){
@@ -1074,16 +1120,19 @@ function renderOrigemConv(){
 // ════════ MARKETING ════════
 async function loadMarketing(){
   const tq=async(t,p)=>{try{return await qry(t,p)}catch(e){return[]}}
-  const [tr,so,em,ca,le]=await Promise.all([
+  const [tr,so,em,ca,le,cart]=await Promise.all([
     tq('mkt_trafego','select=*&order=mes.asc,semana.asc'),
     tq('mkt_social','select=*&order=mes.asc,semana.asc'),
     tq('mkt_email','select=*&order=mes.asc,semana.asc'),
     tq('mkt_campanhas','select=*'),
     tq('mkt_leads','select=*'),
+    tq('carteiras','select=*&order=empresa.asc'),
   ])
   S.mktTrafego=tr||[];S.mktSocial=so||[];S.mktEmail=em||[];S.mktCampanhas=ca||[];S.mktLeads=le||[]
+  S.carteiras=cart||[]
   S.mktLoaded=true
   renderTrafego();renderSocial();renderEmail();renderCampanhas();renderMktLeads()
+  buildCartUF();renderCarteira('Thalita');renderCarteira('Vanuza')
 }
 
 function renderTrafego(){
@@ -1197,6 +1246,111 @@ function renderMktLeads(){
   const maxS=Math.max(...Object.values(byStatus),1)
   $('mktleads-status').innerHTML=Object.entries(byStatus).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar-row"><div style="min-width:110px;font-size:12px;text-align:right">${k}</div><div class="bar-bg"><div class="bar-t" style="width:${v/maxS*100}%;border-radius:4px;background:var(--orange)"></div></div><div class="bar-v">${v}</div></div>`).join('')||'<div class="empty">Sem dados</div>'
   $('mktleads-tbl').innerHTML=rows.length?`<table><thead><tr><th>Canal</th><th>Lead</th><th>Responsável</th><th>Status</th><th>Observação</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.canal||'—'}</td><td style="font-weight:500">${r.lead||'—'}</td><td>${r.responsavel||'—'}</td><td><span class="bdg ${(r.status||'').toLowerCase().includes('perdido')?'br':(r.status||'').toLowerCase().includes('ganho')?'bg':'bo'}">${r.status||'—'}</span></td><td style="color:var(--mut);font-size:12px">${r.observacao||'—'}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sem leads cadastrados</div>'
+}
+
+// ════════ PROJEÇÃO × REALIZADO (HOJE) ════════
+function renderProjecao(){
+  const projHon=parseFloat($('proj-hon').value)||0
+  const projSaas=parseFloat($('proj-saas').value)||0
+  const projVagas=parseInt($('proj-vagas').value)||0
+  const projTotal=projHon+projSaas
+  const hojeStr=hoje.toISOString().split('T')[0]
+  // Vagas transacionais abertas hoje
+  const vagasHoje=S.allTrans.filter(r=>r.data===hojeStr)
+  // SIM+ não fatura abertura, mas conta no vendido. Detecta pela área/nível/empresa contendo "sim+"
+  const isSimPlus=r=>{const t=((r.area||'')+' '+(r.nivel||'')+' '+(r.tipo||'')).toLowerCase();return t.includes('sim+')||t.includes('sim +')}
+  // Honorários vendidos no dia (todas as vagas, incluindo SIM+)
+  const honVendidos=vagasHoje.reduce((s,r)=>s+(r.honorarios||0),0)
+  // Faturamento em abertura do dia (exceto SIM+, e só VGS 50-100%)
+  const vagasAbertura=vagasHoje.filter(r=>!isSimPlus(r)&&r.vgs>=0.5&&r.vgs<=1.0)
+  const fatAbertura=vagasAbertura.reduce((s,r)=>s+(r.honorarios*0.5),0)
+  // SaaS de hoje (ARR já corrigido no load; contrato mensal usa MRR)
+  const saasHoje=S.allSaas.filter(r=>r.data===hojeStr)
+  const arrHoje=saasHoje.reduce((s,r)=>s+(r.arr||0),0)
+  // Realizado do dia = honorários das vagas abertas (exceto SIM+) + ARR SaaS
+  const honSemSim=vagasHoje.filter(r=>!isSimPlus(r)).reduce((s,r)=>s+(r.honorarios||0),0)
+  const realizadoDia=honSemSim+arrHoje
+  const qtdVagas=vagasHoje.length
+  const qtdFaturadas=vagasAbertura.length
+  const deltaTotal=realizadoDia-projTotal
+  const deltaVagas=qtdVagas-projVagas
+
+  $('proj-k').innerHTML=`
+    <div class="card cg"><div class="lbl">Realizado Hoje (total)</div><div class="kpi" style="color:var(--green)">${brl(realizadoDia)}</div><div class="ksub">honorários (s/ SIM+) + ARR</div></div>
+    <div class="card"><div class="lbl">Projetado Hoje</div><div class="kpi">${brl(projTotal)}</div><div class="ksub">hon ${brl(projHon)} + saas ${brl(projSaas)}</div></div>
+    <div class="card ${deltaTotal>=0?'cg':'cr'}"><div class="lbl">Delta do Dia</div><div class="kpi" style="color:${deltaTotal>=0?'var(--green)':'var(--red)'}">${deltaTotal>=0?'+':''}${brl(deltaTotal)}</div><div class="ksub">${deltaTotal>=0?'acima da projeção':'abaixo da projeção'}</div></div>
+    <div class="card co"><div class="lbl">Faturamento Abertura</div><div class="kpi" style="color:var(--orange)">${brl(fatAbertura)}</div><div class="ksub">${qtdFaturadas} vagas (exceto SIM+)</div></div>
+  `
+  $('proj-comp').innerHTML=`
+    <div class="g4" style="margin-bottom:16px">
+      <div><div class="lbl">Vagas Abertas Hoje</div><div style="font-size:22px;font-weight:800">${qtdVagas}</div><div class="ksub">projetadas: ${projVagas} · delta ${deltaVagas>=0?'+':''}${deltaVagas}</div></div>
+      <div><div class="lbl">Vagas Faturadas Abertura</div><div style="font-size:22px;font-weight:800;color:var(--orange)">${qtdFaturadas}</div><div class="ksub">VGS 50-100%, sem SIM+</div></div>
+      <div><div class="lbl">Honorários Vendidos</div><div style="font-size:22px;font-weight:800;color:var(--green)">${brl(honVendidos)}</div><div class="ksub">todas as vagas (c/ SIM+)</div></div>
+      <div><div class="lbl">ARR SaaS Hoje</div><div style="font-size:22px;font-weight:800;color:var(--purple)">${brl(arrHoje)}</div><div class="ksub">${saasHoje.length} contratos</div></div>
+    </div>
+    <div class="lbl" style="margin-bottom:8px">Projetado × Realizado</div>
+    <div style="position:relative;height:26px;background:#F3F4F6;border-radius:6px;margin-bottom:6px">
+      <div style="position:absolute;left:0;top:0;height:100%;width:${projTotal>0?Math.min(realizadoDia/Math.max(projTotal,realizadoDia)*100,100):100}%;background:var(--green);border-radius:6px"></div>
+      ${projTotal>0?`<div style="position:absolute;top:-2px;height:30px;width:3px;background:var(--hdr);left:${Math.min(projTotal/Math.max(projTotal,realizadoDia)*100,100)}%"></div>`:''}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--sub)"><span>Realizado: <strong style="color:var(--green)">${brl(realizadoDia)}</strong></span><span>Projeção: <strong>${brl(projTotal)}</strong></span></div>
+    <div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:${deltaTotal>=0?'var(--gl)':'var(--rl)'};color:${deltaTotal>=0?'var(--gd)':'var(--red)'};font-size:13px;font-weight:600">
+      ${projTotal===0?'Digite a projeção do dia acima para ver o delta':(deltaTotal>=0?`✓ Você está ${brl(deltaTotal)} acima da projeção do dia`:`Faltam ${brl(Math.abs(deltaTotal))} para bater a projeção do dia`)}
+    </div>
+  `
+  $('proj-tbl').innerHTML=vagasHoje.length?`<table><thead><tr><th>Empresa</th><th>UF</th><th>Honorários</th><th>VGS</th><th>Fatura Abertura?</th><th>IS</th></tr></thead><tbody>${vagasHoje.map(r=>{const sim=isSimPlus(r);const fat=!sim&&r.vgs>=0.5&&r.vgs<=1.0;return `<tr><td style="font-weight:500">${r.empresa||'—'}${sim?' <span class="bdg bp">SIM+</span>':''}</td><td>${r.estado||'—'}</td><td style="color:var(--green);font-weight:600">${brl(r.honorarios)}</td><td>${r.vgs?(r.vgs*100).toFixed(0)+'%':'—'}</td><td>${fat?`<span style="color:var(--orange);font-weight:600">${brl(r.honorarios*0.5)}</span>`:'<span style="color:var(--mut)">não</span>'}</td><td style="color:var(--mut)">${r.inside_sales||'—'}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Nenhuma vaga aberta hoje ainda</div>'
+}
+
+// ════════ CARTEIRAS ════════
+function buildCartUF(){
+  ['Thalita','Vanuza'].forEach(dono=>{
+    const ufs=[...new Set(S.carteiras.filter(c=>c.carteira===dono).map(c=>c.estado||'(sem UF)'))].sort()
+    S.cartUF[dono]=[...ufs]
+    const menu=$('uf-'+dono.toLowerCase()+'-menu')
+    if(menu)menu.innerHTML=ufs.map(v=>`<div class="dd-opt" onclick="toggleCartUF('${dono}','${v}',event)"><div class="dd-chk on">✓</div>${v}</div>`).join('')
+  })
+}
+function toggleCartUF(dono,uf,e){
+  e.stopPropagation()
+  const arr=S.cartUF[dono]
+  const i=arr.indexOf(uf)
+  if(i>=0)arr.splice(i,1);else arr.push(uf)
+  buildCartUFChecks(dono);renderCarteira(dono)
+}
+function buildCartUFChecks(dono){
+  const menu=$('uf-'+dono.toLowerCase()+'-menu')
+  if(!menu)return
+  menu.querySelectorAll('.dd-opt').forEach(opt=>{
+    const uf=opt.textContent.trim()
+    const on=S.cartUF[dono].includes(uf)
+    const chk=opt.querySelector('.dd-chk')
+    chk.classList.toggle('on',on);chk.textContent=on?'✓':''
+  })
+  const all=menu.querySelectorAll('.dd-opt').length
+  const sum=$('uf-'+dono.toLowerCase()+'-sum')
+  if(sum)sum.textContent=S.cartUF[dono].length===all?'Todos UF':`${S.cartUF[dono].length} UF`
+}
+function renderCarteira(dono){
+  const busca=($('busca-'+dono.toLowerCase())?.value||'').toLowerCase().trim()
+  const suf=dono.toLowerCase()
+  let rows=S.carteiras.filter(c=>c.carteira===dono)
+  // filtro UF
+  rows=rows.filter(c=>S.cartUF[dono].includes(c.estado||'(sem UF)'))
+  // busca por empresa ou CNPJ
+  if(busca){
+    rows=rows.filter(c=>((c.empresa||'').toLowerCase().includes(busca))||((c.cnpj||'').toLowerCase().includes(busca)))
+  }
+  const total=S.carteiras.filter(c=>c.carteira===dono).length
+  const ativos2026=rows.filter(c=>(c.anos_comprou||'').includes('2026')).length
+  const blacklist=rows.filter(c=>(c.blacklist||'').toLowerCase()==='sim').length
+  const ufsCount=new Set(rows.map(c=>c.estado)).size
+  $('cart-'+suf+'-k').innerHTML=`
+    <div class="card cg"><div class="lbl">Empresas na Carteira</div><div class="kpi">${rows.length}</div><div class="ksub">de ${total} total${busca||rows.length!==total?' (filtrado)':''}</div></div>
+    <div class="card cg"><div class="lbl">Ativos em 2026</div><div class="kpi" style="color:var(--green)">${ativos2026}</div><div class="ksub">compraram este ano</div></div>
+    <div class="card"><div class="lbl">Estados</div><div class="kpi">${ufsCount}</div><div class="ksub">UFs diferentes</div></div>
+    <div class="card ${blacklist>0?'cr':''}"><div class="lbl">BlackList</div><div class="kpi" style="color:${blacklist>0?'var(--red)':'var(--txt)'}">${blacklist}</div><div class="ksub">empresas marcadas</div></div>
+  `
+  $('cart-'+suf+'-tbl').innerHTML=rows.length?`<table><thead><tr><th>Empresa</th><th>CNPJ</th><th>UF</th><th>Cidade</th><th>Contato</th><th>Anos Comprou</th><th>Motivo</th></tr></thead><tbody>${rows.map(c=>`<tr><td style="font-weight:500">${c.empresa||'—'}${(c.blacklist||'').toLowerCase()==='sim'?' <span class="bdg br">BL</span>':''}</td><td style="font-size:12px">${c.cnpj||'—'}</td><td>${c.estado||'—'}</td><td>${c.cidade||'—'}</td><td>${c.contato||'—'}</td><td>${(c.anos_comprou||'').includes('2026')?`<span class="bdg bg">${c.anos_comprou}</span>`:c.anos_comprou||'—'}</td><td style="font-size:12px;color:var(--mut)">${c.motivo||'—'}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nenhuma empresa encontrada com esse filtro/busca</div>'
 }
 
 function nav(el){
