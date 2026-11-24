@@ -176,7 +176,7 @@ tr:nth-child(even) td{background:#FAFAFA}
   <div class="sb-nav" data-tab="areas" onclick="nav(this)"><span class="sb-ico">🗂️</span>Áreas e Níveis</div>
   <div class="sb-nav" data-tab="origem" onclick="nav(this)"><span class="sb-ico">🎚️</span>Origem × Conversão</div>
   <div class="sb-sec">Marketing</div>
-  <div class="sb-nav" data-tab="metas" onclick="nav(this)"><span class="sb-ico">🎯</span>Metas Marketing</div>
+  <div class="sb-nav" data-tab="metasmkt" onclick="nav(this)"><span class="sb-ico">🎯</span>Metas Marketing</div>
   <div class="sb-nav" data-tab="rdcrm" onclick="nav(this)"><span class="sb-ico">🔄</span>RD CRM — Negociações</div>
   <div class="sb-nav" data-tab="metaads" onclick="nav(this)"><span class="sb-ico">📊</span>Meta Ads</div>
   <div class="sb-nav" data-tab="instagram" onclick="nav(this)"><span class="sb-ico">📷</span>Instagram</div>
@@ -421,7 +421,7 @@ tr:nth-child(even) td{background:#FAFAFA}
   </div>
 
   <!-- METAS MARKETING -->
-  <div id="p-metas" class="page">
+  <div id="p-metasmkt" class="page">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <div class="sec" style="margin-bottom:0">Metas de Marketing — Meta × Entrega</div>
       <div style="font-size:11px;color:var(--sub)">Planejamento Nov/26–Jan/27 · <span id="metas-mes">—</span></div>
@@ -739,7 +739,7 @@ function render(){
   safe(()=>renderEvolucao(metaG),'Evolucao')
   safe(()=>renderAreas(),'Areas')
   safe(()=>renderOrigemConv(),'Origem')
-  safe(()=>renderMetas(),'Metas')
+  safe(()=>renderMetasMkt(),'MetasMkt')
   safe(()=>renderProjecao(),'Projecao')
 }
 
@@ -1384,7 +1384,7 @@ async function loadMarketing(){
   // dados de mkt/RD não mudam entre filtros de período; se já carregou, só re-renderiza
   if(S.mktLoaded){
     buildCartUF();renderCarteira('Thalita');renderCarteira('Vanuza')
-    renderMetaAds();renderInstagram();renderRdCrm();renderMetas()
+    renderMetaAds();renderInstagram();renderRdCrm();renderMetasMkt()
     return
   }
   const tq=async(t,p)=>{try{return await qry(t,p)}catch(e){return[]}}
@@ -1402,7 +1402,7 @@ async function loadMarketing(){
   S.rdPipeline=rd||[]
   S.mktLoaded=true
   buildCartUF();renderCarteira('Thalita');renderCarteira('Vanuza')
-  renderMetaAds();renderInstagram();renderRdCrm();renderMetas()
+  renderMetaAds();renderInstagram();renderRdCrm();renderMetasMkt()
 }
 
 // ════════ METAS DE MARKETING (planejamento Nov/26–Jan/27 × integrações) ════════
@@ -1452,7 +1452,7 @@ function cardMeta(titulo,sub,t){
     ${sub?`<div style="font-size:11px;color:var(--mut);margin-top:8px;border-top:1px solid rgba(0,0,0,.06);padding-top:6px">${sub}</div>`:''}
   </div>`
 }
-function renderMetas(){
+function renderMetasMkt(){
   const mes=S.mesRef, ano=S.anoRef
   const M=METAS_MKT[mes]
   if($('metas-mes'))$('metas-mes').textContent=`${(MESES[mes]||'')}/${ano}`
