@@ -1389,17 +1389,19 @@ async function loadMarketing(){
   }
   const tq=async(t,p)=>{try{return await qry(t,p)}catch(e){return[]}}
   const tqAll=async(t,p)=>{try{return await qryAll(t,p)}catch(e){return[]}}
-  const [cart,mc,ma,ii,ip,rd]=await Promise.all([
+  const [cart,mc,ma,ii,ip,rd,rol]=await Promise.all([
     tq('carteiras','select=*&order=empresa.asc'),
     tq('meta_campanhas','select=*&order=gasto.desc'),
     tq('meta_ads','select=*&order=data.asc'),
     tq('instagram_insights','select=*'),
     tq('instagram_posts','select=*&order=engajamento.desc'),
     tqAll('rd_pipeline','select=*&order=data_criacao.desc'),
+    tqAll('roleta','select=empresa,origem,data&order=data.desc'),
   ])
   S.carteiras=cart||[]
   S.metaCamp=mc||[];S.metaAds=ma||[];S.igInsights=ii||[];S.igPosts=ip||[]
   S.rdPipeline=rd||[]
+  S.roletaMkt=rol||[]
   S.mktLoaded=true
   buildCartUF();renderCarteira('Thalita');renderCarteira('Vanuza')
   renderMetaAds();renderInstagram();renderRdCrm();renderMetasMkt()
@@ -1468,14 +1470,21 @@ function renderMetasMkt(){
   // ---- ENTREGAS REAIS DE MARKETING (das integrações, pelo mês de referência) ----
   // LEADS Meta Ads e investimento: série diária meta_ads
   const metaMes=(S.metaAds||[]).filter(r=>+r.mes===mes&&+r.ano===ano)
-  const realLeadsMeta=metaMes.reduce((s,r)=>s+(+r.leads||0),0)
+  const windsorLeadsMeta=metaMes.reduce((s,r)=>s+(+r.leads||0),0)
   const realInvest=metaMes.reduce((s,r)=>s+(+r.gasto||0),0)
+  // normaliza nome de empresa p/ cruzar roleta × RD
+  const normEmp=(t)=>(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\(.*?\)/g,'').replace(/[^a-z0-9]/g,'')
+  const noMes=(d)=>{d=d||'';return parseInt(d.slice(5,7))===mes&&parseInt(d.slice(0,4))===ano}
+  const rolMes=(S.roletaMkt||[]).filter(r=>noMes(r.data))
+  // LEADS Meta Ads: leads da roleta com origem Mídias Sociais (Windsor fica como referência)
+  const rolMeta=rolMes.filter(r=>/m[ií]dias?\s*sociais|instagram|meta|facebook/i.test(r.origem||''))
+  const realLeadsMeta=rolMeta.length
   const realCpl=realLeadsMeta>0?realInvest/realLeadsMeta:0
-  // LEADS e-mail: negócios no RD com origem de e-mail criados no mês (CRM/roleta)
-  const realLeadsEmail=(S.rdPipeline||[]).filter(r=>{
-    const d=r.data_criacao||'';const mm=d?parseInt(d.slice(5,7)):0,aa=d?parseInt(d.slice(0,4)):0
-    return mm===mes&&aa===ano&&/mail/i.test(r.origem||'')
-  }).length
+  // LEADS e-mail: roleta (Email marketing) + negócios no RD com origem e-mail que não estão na roleta
+  const rolEmail=rolMes.filter(r=>/mail/i.test(r.origem||''))
+  const setEmail=new Set(rolEmail.map(r=>normEmp(r.empresa)))
+  const rdEmailExtra=(S.rdPipeline||[]).filter(r=>noMes(r.data_criacao)&&/mail/i.test(r.origem||'')).filter(r=>{const k=normEmp(r.empresa||r.nome);if(!k||setEmail.has(k))return false;setEmail.add(k);return true})
+  const realLeadsEmail=rolEmail.length+rdEmailExtra.length
   // INSTAGRAM: último snapshot de seguidores por conta (com data p/ sinalizar dado velho)
   const igSnap=(conta)=>{const l=(S.igInsights||[]).filter(r=>r.conta===conta);if(!l.length)return {seg:0,data:null};l.sort((a,b)=>(a.data||'').localeCompare(b.data||''));const u=l[l.length-1];return {seg:+u.seguidores||0,data:u.data||null}}
   const igCon=igSnap('connectabil'), igGlo=igSnap('gloriadaconnectabil')
@@ -1517,8 +1526,8 @@ function renderMetasMkt(){
     <!-- GERAÇÃO DE LEADS -->
     <div class="sec">Geração de Leads</div>
     <div class="g3 mb24">
-      ${cardMeta('Leads Meta Ads','Leads das campanhas Meta no mês (via Windsor)',tLeadsMeta)}
-      ${cardMeta('Leads E-mail','Negócios no RD com origem de e-mail no mês',tLeadsEmail)}
+      ${cardMeta('Leads Meta Ads',`Roleta · origem Mídias Sociais · Windsor (formulários): ${fInt(windsorLeadsMeta)}`,tLeadsMeta)}
+      ${cardMeta('Leads E-mail',`${fInt(rolEmail.length)} na roleta + ${fInt(rdEmailExtra.length)} só no RD (sem duplicar)`,tLeadsEmail)}
       ${cardMeta('Investimento Meta Ads','Gasto real das campanhas · CPL '+(realCpl>0?brl(realCpl):'—'),termometro(realInvest,M.invest_meta,fBrl))}
     </div>
 
@@ -1532,7 +1541,7 @@ function renderMetasMkt(){
 
     <div class="card" style="background:#F8FAFC;margin-top:4px">
       <div style="font-size:12px;color:var(--sub)">
-        <b>Metas de marketing</b> (leads, seguidores e interações) do planejamento Nov/26–Jan/27 × entrega real das integrações (Meta Ads e Instagram via Windsor, e-mail via RD CRM).
+        <b>Metas de marketing</b> (leads, seguidores e interações) do planejamento Nov/26–Jan/27 × entrega real das integrações (leads Meta = roleta Mídias Sociais; leads e-mail = roleta + RD CRM sem duplicar; investimento e Instagram via Windsor).
         <span style="color:var(--green)">Verde</span> = meta batida (≥100%) · <span style="color:#D97706">âmbar</span> = ≥70% · <span style="color:var(--red)">vermelho</span> = abaixo de 70% (gatilho da regra de realocação de verba/segmento).
         Metas são mensais — troque o mês no filtro do topo. As metas comerciais (contratos, faturamento) ficam nas abas comerciais.
       </div>
