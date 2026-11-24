@@ -1408,21 +1408,23 @@ async function loadMarketing(){
 // ════════ METAS DE MARKETING (planejamento Nov/26–Jan/27 × integrações) ════════
 // Metas mensais extraídas do Planejamento de Marketing B2B+B2C.
 // chave = mês (11=nov, 12=dez, 1=jan).
+// Apenas METAS DE MARKETING (leads, seguidores, interações, e-mail) — NÃO inclui
+// metas comerciais (contratos, ARR, faturamento), que ficam nas abas comerciais.
 const METAS_MKT={
-  11:{ // Novembro/2026 · 18 du
-    leads_meta:80, leads_email:20, invest_meta:1500,
-    saas_contratos:4, saas_arr:24000, trans_vagas:10, trans_fat:40000,
-    ig_connectabil:13800, ig_gloria:300, ig_interacoes:28
+  11:{ // Novembro/2026 · 18 du · base/kick-off
+    leads_meta:80, leads_email:20, invest_meta:1500, emails_enviados:14000,
+    ig_connectabil:13800, ig_gloria:300, ig_interacoes:28,
+    email_abertura:25, email_clique:3
   },
   12:{ // Dezembro/2026 · 15 du
-    leads_meta:90, leads_email:22, invest_meta:1500,
-    saas_contratos:6, saas_arr:36000, trans_vagas:9, trans_fat:35000,
-    ig_connectabil:13800, ig_gloria:300, ig_interacoes:28
+    leads_meta:90, leads_email:22, invest_meta:1500, emails_enviados:16500,
+    ig_connectabil:13800, ig_gloria:300, ig_interacoes:28,
+    email_abertura:25, email_clique:3
   },
   1:{ // Janeiro/2027 · 20 du
-    leads_meta:65, leads_email:32, invest_meta:1500,
-    saas_contratos:4, saas_arr:24000, trans_vagas:15, trans_fat:58000,
-    ig_connectabil:14100, ig_gloria:500, ig_interacoes:35
+    leads_meta:65, leads_email:32, invest_meta:1500, emails_enviados:22000,
+    ig_connectabil:14100, ig_gloria:500, ig_interacoes:35,
+    email_abertura:28, email_clique:4
   }
 }
 // termômetro: barra com cor por faixa (verde ≥100%, âmbar 70–99%, vermelho <70% — regra dos 70% do plano)
@@ -1463,27 +1465,26 @@ function renderMetas(){
   if(aviso)aviso.style.display='none'
   if(!S.mktLoaded){if(cont)cont.innerHTML='<div class="empty">Carregando dados das integrações…</div>';return}
 
-  // ---- ENTREGAS REAIS (das integrações, filtradas pelo mês de referência) ----
-  const realLeadsMeta=(S.metaAds||[]).filter(r=>+r.mes===mes&&+r.ano===ano).reduce((s,r)=>s+(+r.leads||0),0)
-  const realInvest=(S.metaAds||[]).filter(r=>+r.mes===mes&&+r.ano===ano).reduce((s,r)=>s+(+r.gasto||0),0)
+  // ---- ENTREGAS REAIS DE MARKETING (das integrações, pelo mês de referência) ----
+  // LEADS Meta Ads e investimento: série diária meta_ads
+  const metaMes=(S.metaAds||[]).filter(r=>+r.mes===mes&&+r.ano===ano)
+  const realLeadsMeta=metaMes.reduce((s,r)=>s+(+r.leads||0),0)
+  const realInvest=metaMes.reduce((s,r)=>s+(+r.gasto||0),0)
+  const realCpl=realLeadsMeta>0?realInvest/realLeadsMeta:0
+  // LEADS e-mail: negócios no RD com origem de e-mail criados no mês (CRM/roleta)
   const realLeadsEmail=(S.rdPipeline||[]).filter(r=>{
     const d=r.data_criacao||'';const mm=d?parseInt(d.slice(5,7)):0,aa=d?parseInt(d.slice(0,4)):0
     return mm===mes&&aa===ano&&/mail/i.test(r.origem||'')
   }).length
-  const saasMes=(S.saas||[]).filter(r=>+r.mes===mes||(r.data_venda||'').slice(5,7)==String(mes).padStart(2,'0'))
-  const realSaasContratos=saasMes.length||((S.rdPipeline||[]).filter(r=>{
-    const d=r.data_fechamento||'';const mm=d?parseInt(d.slice(5,7)):0,aa=d?parseInt(d.slice(0,4)):0
-    return mm===mes&&aa===ano&&(r.status||'').toLowerCase().includes('ganho')&&/saas|banco de talentos|assinatura/i.test((r.produto||'')+(r.nome||''))
-  }).length)
-  const realSaasArr=realSaasContratos*6000
-  const transMktMes=(S.rdPipeline||[]).filter(r=>{
-    const d=r.data_fechamento||'';const mm=d?parseInt(d.slice(5,7)):0,aa=d?parseInt(d.slice(0,4)):0
-    return mm===mes&&aa===ano&&(r.status||'').toLowerCase().includes('ganho')&&/mail|meta|facebook|instagram|ads|orgâni|busca/i.test(r.origem||'')
-  })
-  const realTransVagas=transMktMes.length
-  const realTransFat=transMktMes.reduce((s,r)=>s+(+r.valor||0),0)
-  const igSnap=(conta)=>{const l=(S.igInsights||[]).filter(r=>r.conta===conta);if(!l.length)return 0;l.sort((a,b)=>(a.data||'').localeCompare(b.data||''));return +l[l.length-1].seguidores||0}
-  const realIgCon=igSnap('connectabil'), realIgGlo=igSnap('gloriadaconnectabil')
+  // INSTAGRAM: último snapshot de seguidores por conta (com data p/ sinalizar dado velho)
+  const igSnap=(conta)=>{const l=(S.igInsights||[]).filter(r=>r.conta===conta);if(!l.length)return {seg:0,data:null};l.sort((a,b)=>(a.data||'').localeCompare(b.data||''));const u=l[l.length-1];return {seg:+u.seguidores||0,data:u.data||null}}
+  const igCon=igSnap('connectabil'), igGlo=igSnap('gloriadaconnectabil')
+  const realIgCon=igCon.seg, realIgGlo=igGlo.seg
+  // marca dado desatualizado (>6 dias sem snapshot = possível token caído/reconectar)
+  const hojeISO=new Date().toISOString().slice(0,10)
+  const diasDesde=(d)=>d?Math.round((new Date(hojeISO)-new Date(d))/86400000):999
+  const avisoIg=(ig)=>{const dd=diasDesde(ig.data);return dd>6?`<span style="color:var(--red)">⚠ dado de ${ig.data?ig.data.split('-').reverse().join('/'):'—'} · reconectar no Windsor</span>`:`snapshot ${ig.data?ig.data.split('-').reverse().join('/'):'—'}`}
+  // INTERAÇÕES médias por post do mês
   const postsMes=(S.igPosts||[]).filter(p=>{const d=p.data||'';return d&&parseInt(d.slice(5,7))===mes&&parseInt(d.slice(0,4))===ano})
   const realInteracoes=postsMes.length?Math.round(postsMes.reduce((s,p)=>s+(+p.curtidas||0)+(+p.comentarios||0),0)/postsMes.length):0
 
@@ -1496,10 +1497,11 @@ function renderMetas(){
   const tLeadsTot=termometro(totalLeadsReal,totalLeadsMeta,fInt)
 
   cont.innerHTML=`
+    <!-- DESTAQUE: META DE LEADS DO MÊS -->
     <div class="card" style="background:linear-gradient(135deg,#150F29,#2a1f52);color:#fff;margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
         <div>
-          <div style="font-size:12px;opacity:.75;text-transform:uppercase;letter-spacing:1px">Total de leads · ${MESES[mes]}/${ano}</div>
+          <div style="font-size:12px;opacity:.75;text-transform:uppercase;letter-spacing:1px">Leads do mês · ${MESES[mes]}/${ano}</div>
           <div style="font-size:34px;font-weight:800">${fInt(totalLeadsReal)} <span style="font-size:18px;opacity:.7">/ ${fInt(totalLeadsMeta)}</span></div>
           <div style="font-size:13px;color:${tLeadsTot.pct>=100?'#4ADE80':tLeadsTot.pct>=70?'#FBBF24':'#F87171'};font-weight:700">${tLeadsTot.pct.toFixed(0)}% da meta de leads · ${tLeadsTot.status}</div>
         </div>
@@ -1507,37 +1509,32 @@ function renderMetas(){
           <div style="height:14px;background:rgba(255,255,255,.15);border-radius:8px;overflow:hidden">
             <div style="height:100%;width:${Math.min(100,tLeadsTot.pct)}%;background:${tLeadsTot.pct>=100?'#07C86F':tLeadsTot.pct>=70?'#F59E0B':'#EF4444'};border-radius:8px"></div>
           </div>
+          <div style="font-size:11px;opacity:.7;margin-top:6px">${fInt(realLeadsMeta)} Meta Ads + ${fInt(realLeadsEmail)} e-mail · meta ${fInt(M.leads_meta)} + ${fInt(M.leads_email)}</div>
         </div>
       </div>
     </div>
 
-    <div class="sec">B2B · Geração de Leads</div>
+    <!-- GERAÇÃO DE LEADS -->
+    <div class="sec">Geração de Leads</div>
     <div class="g3 mb24">
-      ${cardMeta('Leads Meta Ads (SaaS)','Soma dos leads das campanhas Meta no mês',tLeadsMeta)}
-      ${cardMeta('Leads E-mail B2B','Negócios no RD com origem de e-mail no mês',tLeadsEmail)}
-      ${cardMeta('Investimento Meta Ads','Gasto real das campanhas no mês',termometro(realInvest,M.invest_meta,fBrl))}
+      ${cardMeta('Leads Meta Ads','Leads das campanhas Meta no mês (via Windsor)',tLeadsMeta)}
+      ${cardMeta('Leads E-mail','Negócios no RD com origem de e-mail no mês',tLeadsEmail)}
+      ${cardMeta('Investimento Meta Ads','Gasto real das campanhas · CPL '+(realCpl>0?brl(realCpl):'—'),termometro(realInvest,M.invest_meta,fBrl))}
     </div>
 
-    <div class="sec">B2B · Faturamento com origem em Marketing</div>
-    <div class="g4 mb24">
-      ${cardMeta('Contratos SaaS novos','Novos contratos Banco de Talentos no mês',termometro(realSaasContratos,M.saas_contratos,fInt))}
-      ${cardMeta('ARR novo (SaaS)','R$6 mil/contrato · premissa do plano',termometro(realSaasArr,M.saas_arr,fBrl))}
-      ${cardMeta('Vagas transacionais (mkt)','Vagas ganhas com origem rastreada de mkt',termometro(realTransVagas,M.trans_vagas,fInt))}
-      ${cardMeta('Faturamento transacional (mkt)','Valor das vagas ganhas de mkt',termometro(realTransFat,M.trans_fat,fBrl))}
-    </div>
-
-    <div class="sec">B2C · Ativação e Redes (Instagram)</div>
+    <!-- INSTAGRAM -->
+    <div class="sec">Instagram — Seguidores e Engajamento</div>
     <div class="g3 mb24">
-      ${cardMeta('Seguidores @connectabil','Último snapshot do Instagram',termometro(realIgCon,M.ig_connectabil,fInt))}
-      ${cardMeta('Seguidores @gloriadaconnectabil','Crescimento da GlórIA',termometro(realIgGlo,M.ig_gloria,fInt))}
+      ${cardMeta('Seguidores @connectabil',avisoIg(igCon),termometro(realIgCon,M.ig_connectabil,fInt))}
+      ${cardMeta('Seguidores @gloriadaconnectabil',avisoIg(igGlo),termometro(realIgGlo,M.ig_gloria,fInt))}
       ${cardMeta('Interações médias por post','Curtidas + comentários ÷ posts do mês',termometro(realInteracoes,M.ig_interacoes,fInt))}
     </div>
 
     <div class="card" style="background:#F8FAFC;margin-top:4px">
       <div style="font-size:12px;color:var(--sub)">
-        <b>Como ler:</b> cada termômetro compara a <b>entrega real das integrações</b> (Meta Ads, RD CRM e Instagram, sincronizados no Supabase) com a <b>meta do mês</b> do planejamento.
-        <span style="color:var(--green)">Verde</span> = meta batida (≥100%) · <span style="color:#D97706">âmbar</span> = abaixo mas ≥70% · <span style="color:var(--red)">vermelho</span> = abaixo de 70% (gatilho da regra de realocação de verba/segmento).
-        Metas mudam por mês — troque o mês no filtro do topo.
+        <b>Metas de marketing</b> (leads, seguidores e interações) do planejamento Nov/26–Jan/27 × entrega real das integrações (Meta Ads e Instagram via Windsor, e-mail via RD CRM).
+        <span style="color:var(--green)">Verde</span> = meta batida (≥100%) · <span style="color:#D97706">âmbar</span> = ≥70% · <span style="color:var(--red)">vermelho</span> = abaixo de 70% (gatilho da regra de realocação de verba/segmento).
+        Metas são mensais — troque o mês no filtro do topo. As metas comerciais (contratos, faturamento) ficam nas abas comerciais.
       </div>
     </div>
   `
